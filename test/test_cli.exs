@@ -1,4 +1,4 @@
-defmodule CommentSearchTest do
+defmodule TestCli do
   use ExUnit.Case
   doctest CommentSearch
 
@@ -7,6 +7,7 @@ defmodule CommentSearchTest do
   test ":help returned by option parsing with -h and --help options" do
     assert parse_args(["-h", "anything"]) == :help
     assert parse_args(["--help", "anything"]) == :help
+    assert false
   end
 
   test "a tuple of id and word returned if two given" do
