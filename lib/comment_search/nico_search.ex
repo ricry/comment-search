@@ -4,7 +4,7 @@ defmodule CommentSearch.NicoSearch do
   def fetch(id) do
     get_url(id)
     |> HTTPoison.get!()
-    |> get_body()
+    |> Map.fetch!(:body)
     |> Poison.decode!()
     |> Enum.map(&fetch_comment(&1))
     |> Enum.filter(&(&1 != nil))
@@ -29,22 +29,39 @@ defmodule CommentSearch.NicoSearch do
     "http://nmsg.nicovideo.jp/api.json/thread?version=20090904&thread=#{thread_id}&res_from=-1000"
   end
 
-  def get_body(response) do
-    response
-    |> Map.fetch(:body)
-    |> elem(1)
-  end
-
   def fetch_comment(%{"chat" => chat}) do
-    chat["content"]
+    %{ no: chat["no"], date: date_format(chat["date"]), time: vpos2time_string(chat["vpos"]), comment: chat["content"] }
   end
 
   def fetch_comment(%{}) do
     nil
   end
 
+  def date_format(date) do
+    DateTime.from_unix!(date)
+    |> Timex.Timezone.convert("Asia/Tokyo")
+    |> Timex.format!("%Y/%0m/%0d %H:%M:%S", :strftime)
+  end
+
+  def vpos2time_string(vpos) do
+    minutes = "#{div(vpos, 6000)}" |> String.pad_leading(2, "0")
+    seconds = "#{rem(vpos, 6000) |> div(100)}" |> String.pad_leading(2, "0")
+    "#{minutes}:#{seconds}"
+  end
+
   def search(list, word) do
     list
-    |> Enum.filter(&String.contains?(&1, word))
+    |> Enum.filter(&comment_filter(&1[:comment], word))
+  end
+
+  def comment_filter(str, word) do
+    str != nil and String.contains?(str, word)
+  end
+
+  def get_fields(list, fields) do
+    fields_list = String.split(fields, ",")
+    |> Enum.map(&String.to_atom(&1))
+    list
+    |> Enum.map(&Map.take(&1, fields_list))
   end
 end

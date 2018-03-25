@@ -1,6 +1,6 @@
 defmodule CommentSearch.CLI do
 
-  alias CommentSearch.NicoSearch
+  import CommentSearch.NicoSearch, only: [fetch: 1, search: 2, get_fields: 2]
 
   def main(argv) do
     argv
@@ -20,6 +20,9 @@ defmodule CommentSearch.CLI do
       { _, [ id, word ], _ }
         -> { id, word }
 
+      { _, [ id, word , fields ], _ }
+        -> { id, word , fields }
+
       _ -> :help
 
     end
@@ -33,7 +36,13 @@ defmodule CommentSearch.CLI do
   end
 
   def process({id, word}) do
-    NicoSearch.fetch(id)
-    |> NicoSearch.search(word)
+    fetch(id)
+    |> search(word)
+  end
+
+  def process({id, word, fields}) do
+    fetch(id)
+    |> search(word)
+    |> get_fields(fields)
   end
 end
